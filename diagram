@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "author": "Equipe Smart City - Sensor de Segurança nas Calçadas",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": -50, "attrs": {} },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "ultrasonic1",
+      "top": -160,
+      "left": 200,
+      "attrs": { "distance": "2" }
+    },
+    { "type": "wokwi-pir-motion-sensor", "id": "pir1", "top": -160, "left": 420, "attrs": {} },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 156,
+      "left": 376.2,
+      "attrs": { "volume": "1.0" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_vermelho",
+      "top": -40,
+      "left": -260,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_amarelo",
+      "top": 40,
+      "left": -260,
+      "attrs": { "color": "yellow" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_verde",
+      "top": 120,
+      "left": -260,
+      "attrs": { "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_vermelho",
+      "top": -40,
+      "left": -340,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_amarelo",
+      "top": 40,
+      "left": -340,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_verde",
+      "top": 120,
+      "left": -340,
+      "attrs": { "value": "220" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "ultrasonic1:VCC", "esp:5V", "red", [] ],
+    [ "ultrasonic1:GND", "esp:GND.1", "black", [] ],
+    [ "ultrasonic1:TRIG", "esp:5", "green", [] ],
+    [ "ultrasonic1:ECHO", "esp:18", "blue", [] ],
+    [ "pir1:VCC", "esp:5V", "red", [] ],
+    [ "pir1:GND", "esp:GND.2", "black", [] ],
+    [ "pir1:OUT", "esp:4", "orange", [] ],
+    [ "bz1:1", "esp:25", "green", [] ],
+    [ "bz1:2", "esp:GND.3", "black", [] ],
+    [ "led_vermelho:A", "r_vermelho:2", "red", [] ],
+    [ "r_vermelho:1", "esp:26", "red", [] ],
+    [ "led_vermelho:C", "esp:GND.1", "black", [] ],
+    [ "led_amarelo:A", "r_amarelo:2", "yellow", [] ],
+    [ "r_amarelo:1", "esp:27", "yellow", [] ],
+    [ "led_amarelo:C", "esp:GND.2", "black", [] ],
+    [ "led_verde:A", "r_verde:2", "green", [] ],
+    [ "r_verde:1", "esp:14", "green", [] ],
+    [ "led_verde:C", "esp:GND.3", "black", [] ]
+  ],
+  "dependencies": {}
+}
