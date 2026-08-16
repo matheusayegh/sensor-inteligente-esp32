@@ -1,0 +1,147 @@
+/*
+  =====================================================================
+  Semáforo Inteligente para Pedestres - Sistema Ciberfísico Smart City
+  =====================================================================
+  Projeto Final (RA 3) - Fundamentos de Sistemas Ciberfísicos
+  Equipe: Ali Amer, Arthur Brambilla, Matheus Sayegh, João Thiago
+  Tema: Segurança - "Sensor de segurança nas calçadas
+  =====================================================================
+*/
+
+// ---------------------- Pinos ----------------------
+const int TRIG_PIN      = 5;   // HC-SR04 - Trigger
+const int ECHO_PIN      = 18;  // HC-SR04 - Echo
+const int PIR_PIN       = 4;   // Sensor PIR - saída digital
+const int BUZZER_PIN    = 25;  // Buzzer - alerta sonoro
+const int LED_VERMELHO  = 26;  // Semáforo - Perigo
+const int LED_AMARELO   = 27;  // Semáforo - Atenção
+const int LED_VERDE     = 14;  // Semáforo - Seguro
+
+// ---------------- Limiares de distância (cm) ----------------
+// Ajustados para a faixa prática do HC-SR04 simulado no Wokwi (0-400cm)
+const int LIMIAR_ATENCAO = 100;  // abaixo disso = atenção
+const int LIMIAR_PERIGO  = 30;   // abaixo disso = perigo
+
+// ---------------------- Variáveis ----------------------
+long duracaoPulso;
+int  distanciaCm;
+bool pedestrePresente;
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  pinMode(PIR_PIN, INPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(LED_VERMELHO, OUTPUT);
+  pinMode(LED_AMARELO, OUTPUT);
+  pinMode(LED_VERDE, OUTPUT);
+
+  digitalWrite(BUZZER_PIN, LOW);
+  apagarLeds();
+
+  Serial.println("======================================================");
+  Serial.println(" Semaforo Inteligente para Pedestres - INICIALIZADO");
+  Serial.println(" Aguardando leituras dos sensores...");
+  Serial.println("======================================================");
+}
+
+void loop() {
+  // Passo 1: o PIR detecta a presença de pedestre na calçada/faixa
+  pedestrePresente = digitalRead(PIR_PIN);
+
+  // Passo 2: o ESP32 lê a distância do veículo via HC-SR04
+  distanciaCm = medirDistanciaCm();
+
+  // Passos 3 e 4: comparar distância com limiares e decidir o estado
+  if (pedestrePresente) {
+    if (distanciaCm > 0 && distanciaCm < LIMIAR_PERIGO) {
+      estadoPerigo();
+    } else if (distanciaCm < LIMIAR_ATENCAO) {
+      estadoAtencao();
+    } else {
+      estadoSeguro();
+    }
+  } else {
+    estadoRepouso();
+  }
+
+  delay(300);
+}
+
+// ---------------------------------------------------------------
+// Mede a distância em centímetros usando o sensor ultrassônico
+// ---------------------------------------------------------------
+int medirDistanciaCm() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  // Timeout de 30ms evita travar o loop se não houver eco
+  duracaoPulso = pulseIn(ECHO_PIN, HIGH, 30000);
+  if (duracaoPulso == 0) {
+    return -1; // leitura inválida / fora de alcance
+  }
+
+  // Velocidade do som ~0.034 cm/us, dividido por 2 (ida e volta)
+  return duracaoPulso * 0.034 / 2;
+}
+
+// ---------------------------------------------------------------
+// Funções de estado do semáforo
+// ---------------------------------------------------------------
+void apagarLeds() {
+  digitalWrite(LED_VERMELHO, LOW);
+  digitalWrite(LED_AMARELO, LOW);
+  digitalWrite(LED_VERDE, LOW);
+}
+
+// Pedestre presente e via livre -> pode atravessar com segurança
+void estadoSeguro() {
+  apagarLeds();
+  digitalWrite(LED_VERDE, HIGH);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  Serial.print("[SEGURO]  Pedestre presente | Distancia: ");
+  Serial.print(distanciaCm);
+  Serial.println(" cm | LED verde aceso");
+}
+
+// Veículo se aproximando dentro da faixa de atenção
+void estadoAtencao() {
+  apagarLeds();
+  digitalWrite(LED_AMARELO, HIGH);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  Serial.print("[ATENCAO] Pedestre presente | Distancia: ");
+  Serial.print(distanciaCm);
+  Serial.println(" cm | LED amarelo aceso");
+}
+
+// Veículo muito próximo com pedestre na via -> risco grave
+void estadoPerigo() {
+  apagarLeds();
+  digitalWrite(LED_VERMELHO, HIGH);
+
+  // Buzzer intermitente (beep) enquanto durar o perigo
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(150);
+  digitalWrite(BUZZER_PIN, LOW);
+  delay(100);
+
+  Serial.print("[PERIGO!] Pedestre presente | Distancia: ");
+  Serial.print(distanciaCm);
+  Serial.println(" cm | LED vermelho + BUZZER acionados");
+}
+
+// Nenhum pedestre detectado -> sistema em repouso, sem falso alarme
+void estadoRepouso() {
+  apagarLeds();
+  digitalWrite(LED_VERDE, HIGH);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  Serial.println("[REPOUSO] Nenhum pedestre detectado | LED verde (sem alerta)");
+}
